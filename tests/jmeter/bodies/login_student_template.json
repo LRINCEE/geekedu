@@ -1,0 +1,4 @@
+{
+  "username": "${student_username}",
+  "password": "${student_password}"
+}

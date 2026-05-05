@@ -51,7 +51,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 
 	userID, _ := c.Get("user_id")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	resp, err := h.orderClient.CreateOrder(ctx, &pb.CreateOrderRequest{

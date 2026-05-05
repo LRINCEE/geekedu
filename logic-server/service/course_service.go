@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"geekedu/common/errcode"
+	"geekedu/common/logger"
+	"geekedu/common/observability"
 	pb "geekedu/common/pb"
 	"geekedu/logic-server/model"
 
+	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -55,7 +57,7 @@ func (s *CourseServiceServer) CreateCourse(ctx context.Context, req *pb.CreateCo
 		CoverKey:    req.CoverKey,
 	}
 	if err := s.courseRepo.CreateCourse(course); err != nil {
-		log.Printf("Failed to create course: %v", err)
+		logger.Log.Error("Failed to create course", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 
@@ -79,7 +81,7 @@ func (s *CourseServiceServer) GetCoverUploadURL(ctx context.Context, req *pb.Get
 	objectKey := s.storage.GenerateCoverKey(0, ext)
 	url, err := s.storage.GeneratePresignedPutURL(objectKey, 300)
 	if err != nil {
-		log.Printf("Failed to generate presigned PUT url: %v", err)
+		logger.Log.Error("Failed to generate presigned PUT url", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrOSS.ToGRPCError()
 	}
 
@@ -99,15 +101,15 @@ func (s *CourseServiceServer) ListCourses(ctx context.Context, req *pb.ListCours
 			if err := proto.Unmarshal(cachedData, &resp); err == nil {
 				return &resp, nil
 			}
-			log.Printf("Failed to unmarshal cached course list: %v", err)
-		} else if err != nil {
-			log.Printf("Redis GET error: %v", err)
+			logger.Log.Warn("Failed to unmarshal cached course list", observability.Fields(ctx, zap.Error(err))...)
+		} else if err != nil && !errors.Is(err, ErrRedisCircuitOpen) {
+			logger.Log.Warn("Redis GET error", observability.Fields(ctx, zap.Error(err))...)
 		}
 	}
 
 	//
 	v, err, _ := s.courseListGroup.Do(cacheKey, func() (interface{}, error) {
-		resp, err := s.loadCourseList(page, pageSize)
+		resp, err := s.loadCourseList(ctx, page, pageSize)
 		if err != nil {
 			return nil, err
 		}
@@ -117,8 +119,8 @@ func (s *CourseServiceServer) ListCourses(ctx context.Context, req *pb.ListCours
 			if err == nil {
 				expiration := 5*time.Minute + time.Duration(rand.Intn(60))*time.Second
 				//缓存课程列表，过期时间为5分钟到5分59随机值
-				if err := s.cache.Set(context.Background(), cacheKey, data, expiration); err != nil {
-					log.Printf("Failed to set course list cache: %v", err)
+				if err := s.cache.Set(ctx, cacheKey, data, expiration); err != nil && !errors.Is(err, ErrRedisCircuitOpen) {
+					logger.Log.Warn("Failed to set course list cache", observability.Fields(ctx, zap.Error(err))...)
 				}
 			}
 		}
@@ -138,7 +140,7 @@ func (s *CourseServiceServer) GetCourse(ctx context.Context, req *pb.GetCourseRe
 	course, err := s.courseRepo.GetCourseByID(uint64(req.CourseId))
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("Failed to get course %d: %v", req.CourseId, err)
+			logger.Log.Error("Failed to get course", observability.Fields(ctx, zap.Int64("course_id", req.CourseId), zap.Error(err))...)
 			return nil, errcode.ErrInternal.ToGRPCError()
 		}
 		return nil, errcode.ErrCourseNotFound.ToGRPCError()
@@ -146,7 +148,7 @@ func (s *CourseServiceServer) GetCourse(ctx context.Context, req *pb.GetCourseRe
 
 	videos, err := s.videoRepo.GetVideosByCourseID(course.ID)
 	if err != nil {
-		log.Printf("Failed to get videos for course %d: %v", course.ID, err)
+		logger.Log.Error("Failed to get videos for course", observability.Fields(ctx, zap.Uint64("course_id", course.ID), zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 
@@ -157,10 +159,11 @@ func (s *CourseServiceServer) GetCourse(ctx context.Context, req *pb.GetCourseRe
 }
 
 //加载课程列表
-func (s *CourseServiceServer) loadCourseList(page, pageSize int) (*pb.ListCoursesResponse, error) {
+func (s *CourseServiceServer) loadCourseList(ctx context.Context, page, pageSize int) (*pb.ListCoursesResponse, error) {
+	observability.IncCourseListLoad("db")
 	courses, total, err := s.courseRepo.ListCourses(page, pageSize)
 	if err != nil {
-		log.Printf("Failed to list courses: %v", err)
+		logger.Log.Error("Failed to list courses", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 
@@ -177,7 +180,7 @@ func (s *CourseServiceServer) toCourseItem(course *model.Course) *pb.CourseItem 
 	if course.CoverKey != "" {
 		url, err := s.storage.GenerateSignedURL(course.CoverKey, 3600)
 		if err != nil {
-			log.Printf("Failed to generate cover URL for course %d: %v", course.ID, err)
+			logger.Log.Warn("Failed to generate cover URL", zap.Uint64("course_id", course.ID), zap.Error(err))
 		} else {
 			coverURL = url
 		}
@@ -227,6 +230,9 @@ func (s *CourseServiceServer) invalidateCourseListCache(ctx context.Context) {
 		return
 	}
 	if err := deleter.DeletePrefix(ctx, "cache:courses:"); err != nil {
-		log.Printf("Failed to invalidate course list cache: %v", err)
+		if errors.Is(err, ErrRedisCircuitOpen) {
+			return
+		}
+		logger.Log.Warn("Failed to invalidate course list cache", observability.Fields(ctx, zap.Error(err))...)
 	}
 }

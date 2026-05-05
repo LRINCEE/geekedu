@@ -3,14 +3,16 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 
 	"geekedu/common/errcode"
+	"geekedu/common/logger"
+	"geekedu/common/observability"
 	pb "geekedu/common/pb"
 	"geekedu/logic-server/model"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -37,7 +39,7 @@ func (s *VideoServiceServer) InitMultipartUpload(ctx context.Context, req *pb.In
 	objectKey := s.storage.GenerateVideoKey(uint64(req.CourseId), req.Filename)
 	uploadID, err := s.storage.InitiateMultipartUpload(objectKey)
 	if err != nil {
-		log.Printf("Failed to initiate multipart upload: %v", err)
+		logger.Log.Error("Failed to initiate multipart upload", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrOSS.ToGRPCError()
 	}
 
@@ -45,7 +47,7 @@ func (s *VideoServiceServer) InitMultipartUpload(ctx context.Context, req *pb.In
 	for i := 1; i <= int(req.PartCount); i++ {
 		url, err := s.storage.GeneratePresignedPartURL(objectKey, uploadID, i)
 		if err != nil {
-			log.Printf("Failed to generate presigned URL for part %d: %v", i, err)
+			logger.Log.Error("Failed to generate presigned URL for part", observability.Fields(ctx, zap.Int("part_number", i), zap.Error(err))...)
 			return nil, errcode.ErrOSS.ToGRPCError()
 		}
 		uploadURLs = append(uploadURLs, url)
@@ -75,7 +77,7 @@ func (s *VideoServiceServer) CompleteMultipartUpload(ctx context.Context, req *p
 	}
 
 	if err := s.storage.CompleteMultipartUpload(req.ObjectKey, req.UploadId, parts); err != nil {
-		log.Printf("Failed to complete multipart upload: %v", err)
+		logger.Log.Error("Failed to complete multipart upload", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrOSS.ToGRPCError()
 	}
 
@@ -85,7 +87,7 @@ func (s *VideoServiceServer) CompleteMultipartUpload(ctx context.Context, req *p
 		VideoKey: req.ObjectKey,
 	}
 	if err := s.videoRepo.CreateVideo(video); err != nil {
-		log.Printf("Failed to save video record: %v", err)
+		logger.Log.Error("Failed to save video record", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 
@@ -100,7 +102,7 @@ func (s *VideoServiceServer) GetVideoPlayURL(ctx context.Context, req *pb.GetVid
 	video, err := s.videoRepo.GetVideoByID(uint64(req.VideoId))
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("Failed to get video %d: %v", req.VideoId, err)
+			logger.Log.Error("Failed to get video", observability.Fields(ctx, zap.Int64("video_id", req.VideoId), zap.Error(err))...)
 			return nil, errcode.ErrInternal.ToGRPCError()
 		}
 		return nil, errcode.ErrVideoNotFound.ToGRPCError()
@@ -108,7 +110,7 @@ func (s *VideoServiceServer) GetVideoPlayURL(ctx context.Context, req *pb.GetVid
 
 	purchased, err := s.orderRepo.CheckPurchase(uint64(req.UserId), video.CourseID)
 	if err != nil {
-		log.Printf("Failed to check purchase: %v", err)
+		logger.Log.Error("Failed to check purchase", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 	if !purchased {
@@ -117,7 +119,7 @@ func (s *VideoServiceServer) GetVideoPlayURL(ctx context.Context, req *pb.GetVid
 
 	playURL, err := s.storage.GenerateSignedURL(video.VideoKey, 3600)
 	if err != nil {
-		log.Printf("Failed to generate play URL: %v", err)
+		logger.Log.Error("Failed to generate play URL", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 

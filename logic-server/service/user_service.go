@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
 
 	"geekedu/common/errcode"
+	"geekedu/common/logger"
+	"geekedu/common/observability"
 	pb "geekedu/common/pb"
 	"geekedu/logic-server/model"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +36,7 @@ func (s *UserServiceServer) Register(ctx context.Context, req *pb.RegisterReques
 
 	existing, err := s.userRepo.GetUserByUsername(req.Username)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Printf("Failed to check existing user: %v", err)
+		logger.Log.Error("Failed to check existing user", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 	if existing != nil {
@@ -43,7 +45,7 @@ func (s *UserServiceServer) Register(ctx context.Context, req *pb.RegisterReques
 
 	hashedPassword, err := s.pwd.Hash(req.Password)
 	if err != nil {
-		log.Printf("Failed to hash password: %v", err)
+		logger.Log.Error("Failed to hash password", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 
@@ -57,7 +59,7 @@ func (s *UserServiceServer) Register(ctx context.Context, req *pb.RegisterReques
 		if errors.Is(err, errcode.ErrUsernameExists) {
 			return nil, errcode.ErrUsernameExists.ToGRPCError()
 		}
-		log.Printf("Failed to create user: %v", err)
+		logger.Log.Error("Failed to create user", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 
@@ -72,7 +74,7 @@ func (s *UserServiceServer) Login(ctx context.Context, req *pb.LoginRequest) (*p
 	user, err := s.userRepo.GetUserByUsername(req.Username)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("Failed to get user: %v", err)
+			logger.Log.Error("Failed to get user", observability.Fields(ctx, zap.Error(err))...)
 			return nil, errcode.ErrInternal.ToGRPCError()
 		}
 		return nil, errcode.ErrInvalidCredential.ToGRPCError()
@@ -84,7 +86,7 @@ func (s *UserServiceServer) Login(ctx context.Context, req *pb.LoginRequest) (*p
 
 	token, err := s.token.Generate(int64(user.ID), int32(user.Role))
 	if err != nil {
-		log.Printf("Failed to generate token: %v", err)
+		logger.Log.Error("Failed to generate token", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 

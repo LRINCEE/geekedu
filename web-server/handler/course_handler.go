@@ -34,7 +34,7 @@ func (h *CourseHandler) ListCourses(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	resp, err := h.courseClient.ListCourses(ctx, &pb.ListCoursesRequest{
@@ -63,7 +63,7 @@ func (h *CourseHandler) GetCoverUploadURL(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	resp, err := h.courseClient.GetCoverUploadURL(ctx, &pb.GetCoverUploadURLRequest{Filename: filename})
@@ -95,7 +95,7 @@ func (h *CourseHandler) CreateCourse(c *gin.Context) {
 	}
 
 	teacherID, _ := c.Get("user_id")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	resp, err := h.courseClient.CreateCourse(ctx, &pb.CreateCourseRequest{
@@ -150,7 +150,7 @@ func (h *CourseHandler) bindCreateCourseMultipart(c *gin.Context) (CreateReq, er
 
 	fileHeader, err := c.FormFile("cover")
 	if err == nil && fileHeader != nil && req.CoverKey == "" {
-		coverKey, err := h.uploadCoverViaSignedURL(fileHeader.Filename, func() (io.ReadCloser, error) {
+		coverKey, err := h.uploadCoverViaSignedURL(c.Request.Context(), fileHeader.Filename, func() (io.ReadCloser, error) {
 			return fileHeader.Open()
 		})
 		if err != nil {
@@ -162,8 +162,8 @@ func (h *CourseHandler) bindCreateCourseMultipart(c *gin.Context) (CreateReq, er
 }
 
 // uploadCoverViaSignedURL 上传课程封面到指定的URL
-func (h *CourseHandler) uploadCoverViaSignedURL(filename string, openFile func() (io.ReadCloser, error)) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (h *CourseHandler) uploadCoverViaSignedURL(baseCtx context.Context, filename string, openFile func() (io.ReadCloser, error)) (string, error) {
+	ctx, cancel := context.WithTimeout(baseCtx, 10*time.Second)
 	defer cancel()
 
 	uploadResp, err := h.courseClient.GetCoverUploadURL(ctx, &pb.GetCoverUploadURLRequest{Filename: filename})
@@ -207,7 +207,7 @@ func (h *CourseHandler) GetCourse(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	resp, err := h.courseClient.GetCourse(ctx, &pb.GetCourseRequest{CourseId: courseID})

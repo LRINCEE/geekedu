@@ -47,6 +47,8 @@ services:
       OSS_BUCKET: ${OSS_BUCKET}
       JWT_SECRET: ${JWT_SECRET}
       GRPC_PORT: "9090"
+      ACCESS_LOG_ENABLED: ${ACCESS_LOG_ENABLED:-false}
+      GRPC_ACCESS_LOG_ENABLED: ${GRPC_ACCESS_LOG_ENABLED:-false}
     command: sh -c "if command -v air >/dev/null 2>&1; then air; else go run .; fi"
     depends_on:
       mysql:
@@ -65,6 +67,9 @@ services:
       LOGIC_SERVER_ADDR: logic-server:9090
       JWT_SECRET: ${JWT_SECRET}
       HTTP_PORT: "8080"
+      ACCESS_LOG_ENABLED: ${ACCESS_LOG_ENABLED:-false}
+      HTTP_ACCESS_LOG_ENABLED: ${HTTP_ACCESS_LOG_ENABLED:-false}
+      GRPC_ACCESS_LOG_ENABLED: ${GRPC_ACCESS_LOG_ENABLED:-false}
     command: sh -c "if command -v air >/dev/null 2>&1; then air; else go run .; fi"
     depends_on:
       - logic-server

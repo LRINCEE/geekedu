@@ -8,7 +8,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var Log *zap.Logger
+var Log = zap.NewNop()
 
 // InitLogger 初始化全局 Zap Logger
 // env: 开发环境(dev)会同时输出到控制台(高亮)，生产环境(prod)只输出 JSON 到文件

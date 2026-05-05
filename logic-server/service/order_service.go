@@ -4,14 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"geekedu/common/errcode"
+	"geekedu/common/logger"
+	"geekedu/common/observability"
 	pb "geekedu/common/pb"
 	"geekedu/logic-server/model"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -42,7 +44,9 @@ func (s *OrderServiceServer) CreateOrder(ctx context.Context, req *pb.CreateOrde
 	if s.cache != nil {
 		acquired, err := s.cache.SetNX(ctx, lockKey, lockValue, 10*time.Second)
 		if err != nil {
-			log.Printf("Redis SetNX error, fallback to DB unique key: %v", err)
+			if !errors.Is(err, ErrRedisCircuitOpen) {
+				logger.Log.Warn("Redis SetNX error, fallback to DB unique key", observability.Fields(ctx, zap.Error(err))...)
+			}
 		} else if !acquired {
 			return nil, errcode.ErrOrderProcessing.ToGRPCError()
 		} else {
@@ -62,14 +66,16 @@ func (s *OrderServiceServer) CreateOrder(ctx context.Context, req *pb.CreateOrde
 			end
 		`
 		if err := s.cache.Eval(ctx, script, []string{lockKey}, lockValue); err != nil {
-			log.Printf("Redis unlock eval error: %v", err)
+			if !errors.Is(err, ErrRedisCircuitOpen) {
+				logger.Log.Warn("Redis unlock eval error", observability.Fields(ctx, zap.Error(err))...)
+			}
 		}
 	}()
 
 	course, err := s.courseRepo.GetCourseByID(uint64(req.CourseId))
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("Failed to get course %d: %v", req.CourseId, err)
+			logger.Log.Error("Failed to get course", observability.Fields(ctx, zap.Int64("course_id", req.CourseId), zap.Error(err))...)
 			return nil, errcode.ErrInternal.ToGRPCError()
 		}
 		return nil, errcode.ErrCourseNotFound.ToGRPCError()
@@ -77,7 +83,7 @@ func (s *OrderServiceServer) CreateOrder(ctx context.Context, req *pb.CreateOrde
 
 	purchased, err := s.orderRepo.CheckPurchase(uint64(req.UserId), uint64(req.CourseId))
 	if err != nil {
-		log.Printf("Failed to check purchase: %v", err)
+		logger.Log.Error("Failed to check purchase", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 	if purchased {
@@ -95,7 +101,7 @@ func (s *OrderServiceServer) CreateOrder(ctx context.Context, req *pb.CreateOrde
 		if errors.Is(err, errcode.ErrAlreadyPurchased) {
 			return nil, errcode.ErrAlreadyPurchased.ToGRPCError()
 		}
-		log.Printf("Failed to create order: %v", err)
+		logger.Log.Error("Failed to create order", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 
@@ -108,7 +114,7 @@ func (s *OrderServiceServer) CheckPurchase(ctx context.Context, req *pb.CheckPur
 	}
 	purchased, err := s.orderRepo.CheckPurchase(uint64(req.UserId), uint64(req.CourseId))
 	if err != nil {
-		log.Printf("Failed to check purchase: %v", err)
+		logger.Log.Error("Failed to check purchase", observability.Fields(ctx, zap.Error(err))...)
 		return nil, errcode.ErrInternal.ToGRPCError()
 	}
 	return &pb.CheckPurchaseResponse{Purchased: purchased}, nil

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"geekedu/common/observability"
 	_ "geekedu/web-server/docs"
 	"geekedu/web-server/grpc_client"
 	"geekedu/web-server/handler"
@@ -14,11 +15,15 @@ import (
 
 func SetupRouter() *gin.Engine {
 	r := gin.New()
-	r.Use(middleware.GinLogger(), middleware.GinRecovery(true))
+	r.Use(
+		observability.TraceMiddleware(),
+		observability.HTTPMetricsMiddleware(),
+		middleware.GinLogger(),
+		middleware.GinRecovery(true),
+	)
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok", "service": "geekedu-web"})
-	})
+	r.GET("/health", observability.HealthHandler("geekedu-web"))
+	r.GET("/metrics", observability.PrometheusGinHandler())
 
 	r.Use(middleware.CORSMiddleware())
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

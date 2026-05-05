@@ -45,5 +45,10 @@ data/
 mysql_data/
 redis_data/
 
+# JMeter generated results
+*.jtl
+tests/jmeter/report/
+tests/jmeter/*-report-*/
+
 *.md
 !README.md

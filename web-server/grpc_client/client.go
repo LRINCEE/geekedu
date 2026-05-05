@@ -1,11 +1,12 @@
 package grpc_client
 
 import (
-	"log"
-
 	"geekedu/common/config"
+	"geekedu/common/logger"
+	"geekedu/common/observability"
 	pb "geekedu/common/pb"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -25,9 +26,17 @@ func InitGRPCClient() {
 	var err error
 	conn, err = grpc.NewClient(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(
+			observability.UnaryClientTraceInterceptor(),
+			observability.UnaryClientLoggingInterceptor(),
+			observability.UnaryClientMetricsInterceptor(),
+		),
 	)
 	if err != nil {
-		log.Fatalf("Failed to connect to Logic Server at %s: %v", addr, err)
+		logger.Log.Fatal("Failed to connect to Logic Server",
+			zap.String("addr", addr),
+			zap.Error(err),
+		)
 	}
 
 	UserClient = pb.NewUserServiceClient(conn)
@@ -35,7 +44,7 @@ func InitGRPCClient() {
 	VideoClient = pb.NewVideoServiceClient(conn)
 	OrderClient = pb.NewOrderServiceClient(conn)
 
-	log.Printf("gRPC client connected to Logic Server at %s", addr)
+	logger.Log.Info("gRPC client connected to Logic Server", zap.String("addr", addr))
 }
 
 func Close() {
