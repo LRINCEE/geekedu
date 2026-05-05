@@ -1,0 +1,46 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Go build and test artifacts
+bin/
+*.test
+*.out
+coverage
+coverage.*
+*.cover
+*.prof
+
+# Go temporary backup files
+*.go.[0-9]*
+
+# Node dependencies and build artifacts
+node_modules/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Temporary files and local tool caches
+tmp/
+temp/
+*.tmp
+*.bak
+*~
+.workbuddy/
+
+data/
+mysql_data/
+redis_data/

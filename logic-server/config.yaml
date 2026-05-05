@@ -1,0 +1,25 @@
+server:
+  grpc_port: "9090"
+
+database:
+  host: "localhost"
+  port: "3306"
+  user: "root"
+  password: "root"
+  dbname: "geekedu"
+
+redis:
+  host: "localhost"
+  port: "6379"
+  password: ""
+  db: 0
+
+oss:
+  endpoint: "oss-cn-hangzhou.aliyuncs.com"
+  access_key_id: "your-access-key-placeholder"
+  access_key_secret: "your-secret-key-placeholder"
+  bucket_name: "geekedu-bucket-placeholder"
+
+jwt:
+  secret: "geekedu-jwt-secret-change-me"
+  expire_hours: 24

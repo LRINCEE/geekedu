@@ -1,0 +1,647 @@
+basePath: /api/v1
+definitions:
+  handler.CompleteUploadData:
+    properties:
+      video_id:
+        type: integer
+    type: object
+  handler.CompleteUploadRequest:
+    properties:
+      object_key:
+        type: string
+      parts:
+        items:
+          $ref: '#/definitions/handler.PartInfo'
+        type: array
+      title:
+        example: 第一节：Go语言基础
+        type: string
+      upload_id:
+        type: string
+    required:
+    - object_key
+    - parts
+    - title
+    - upload_id
+    type: object
+  handler.CreateCourseData:
+    properties:
+      course_id:
+        type: integer
+    type: object
+  handler.CreateOrderData:
+    properties:
+      order_id:
+        type: integer
+    type: object
+  handler.CreateOrderRequest:
+    properties:
+      course_id:
+        description: 必须传课程ID
+        example: 1001
+        type: integer
+    required:
+    - course_id
+    type: object
+  handler.CreateReq:
+    properties:
+      cover_key:
+        description: 前端传回 OSS 的 key
+        example: covers/xxx.jpg
+        type: string
+      description:
+        example: 零基础入门Go语言
+        type: string
+      price:
+        example: 99.9
+        type: number
+      title:
+        example: Go语言实战
+        type: string
+    required:
+    - title
+    type: object
+  handler.GetCourseData:
+    properties:
+      course:
+        $ref: '#/definitions/pb.CourseItem'
+      videos:
+        items:
+          $ref: '#/definitions/pb.VideoItem'
+        type: array
+    type: object
+  handler.GetCoverUploadURLData:
+    properties:
+      cover_key:
+        type: string
+      upload_url:
+        type: string
+    type: object
+  handler.GetPlayURLData:
+    properties:
+      play_url:
+        type: string
+    type: object
+  handler.InitUploadData:
+    properties:
+      object_key:
+        type: string
+      upload_id:
+        type: string
+      upload_urls:
+        items:
+          type: string
+        type: array
+    type: object
+  handler.InitUploadRequest:
+    properties:
+      filename:
+        example: lesson1.mp4
+        type: string
+      part_count:
+        example: 3
+        type: integer
+      title:
+        example: 第一节：Go语言基础
+        type: string
+    required:
+    - filename
+    - part_count
+    - title
+    type: object
+  handler.ListCoursesData:
+    properties:
+      courses:
+        items:
+          $ref: '#/definitions/pb.CourseItem'
+        type: array
+      total:
+        type: integer
+    type: object
+  handler.LoginData:
+    properties:
+      role:
+        example: 1
+        type: integer
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user_id:
+        example: 1001
+        type: integer
+    type: object
+  handler.LoginRequest:
+    properties:
+      password:
+        example: "123456"
+        type: string
+      username:
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  handler.PartInfo:
+    properties:
+      etag:
+        example: '"d41d8cd98f00b204e9800998ecf8427e"'
+        type: string
+      part_number:
+        example: 1
+        type: integer
+    type: object
+  handler.RegisterData:
+    properties:
+      user_id:
+        example: 1001
+        type: integer
+    type: object
+  handler.RegisterRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  pb.CourseItem:
+    properties:
+      cover_url:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      price:
+        type: number
+      teacher_id:
+        type: integer
+      title:
+        type: string
+    type: object
+  pb.VideoItem:
+    properties:
+      course_id:
+        type: integer
+      id:
+        type: integer
+      sort_order:
+        type: integer
+      title:
+        type: string
+    type: object
+  response.Response-any:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data: {}
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_CompleteUploadData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.CompleteUploadData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_CreateCourseData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.CreateCourseData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_CreateOrderData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.CreateOrderData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_GetCourseData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.GetCourseData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_GetCoverUploadURLData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.GetCoverUploadURLData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_GetPlayURLData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.GetPlayURLData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_InitUploadData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.InitUploadData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_ListCoursesData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.ListCoursesData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_LoginData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.LoginData'
+      msg:
+        example: success
+        type: string
+    type: object
+  response.Response-handler_RegisterData:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/handler.RegisterData'
+      msg:
+        example: success
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: GeekEdu 微服务在线教育平台 API 网关文档
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: GeekEdu API 接口文档
+  version: "1.0"
+paths:
+  /api/v1/courses:
+    get:
+      description: 获取带分页的课程列表
+      parameters:
+      - description: 页码 (默认1)
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量 (默认10)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_ListCoursesData'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      summary: 获取课程列表
+      tags:
+      - 课程模块
+    post:
+      consumes:
+      - application/json
+      description: 教师创建一门新课程
+      parameters:
+      - description: 课程信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_CreateCourseData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      security:
+      - Bearer: []
+      summary: 创建课程
+      tags:
+      - 课程模块
+  /api/v1/courses/{course_id}:
+    get:
+      description: 获取单门课程的详细信息及视频列表
+      parameters:
+      - description: 课程 ID
+        in: path
+        name: course_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_GetCourseData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      summary: 获取课程详情
+      tags:
+      - 课程模块
+  /api/v1/courses/{course_id}/videos/complete:
+    post:
+      consumes:
+      - application/json
+      description: 教师完成OSS视频分片上传后通知后端合并
+      parameters:
+      - description: 课程 ID
+        in: path
+        name: course_id
+        required: true
+        type: integer
+      - description: 分片合并信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CompleteUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_CompleteUploadData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      security:
+      - Bearer: []
+      summary: 完成视频分片上传
+      tags:
+      - 视频模块
+  /api/v1/courses/{course_id}/videos/init:
+    post:
+      consumes:
+      - application/json
+      description: 教师上传视频前获取OSS分片预签名URL列表
+      parameters:
+      - description: 课程 ID
+        in: path
+        name: course_id
+        required: true
+        type: integer
+      - description: 初始化上传信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.InitUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_InitUploadData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      security:
+      - Bearer: []
+      summary: 初始化视频分片上传
+      tags:
+      - 视频模块
+  /api/v1/courses/cover/upload_url:
+    get:
+      description: 向OSS请求课程封面上传的预签名URL
+      parameters:
+      - description: 文件名 (如 cover.jpg)
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_GetCoverUploadURLData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      summary: 获取封面上传链接
+      tags:
+      - 课程模块
+  /api/v1/orders:
+    post:
+      consumes:
+      - application/json
+      description: 用户购买一门课程
+      parameters:
+      - description: 购买请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_CreateOrderData'
+        "400":
+          description: 参数错误或已购买
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      security:
+      - Bearer: []
+      summary: 创建订单
+      tags:
+      - 订单模块
+  /api/v1/videos/{video_id}/play_url:
+    get:
+      description: 已购买课程的用户获取视频预签名播放链接
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_GetPlayURLData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "403":
+          description: 未购买课程
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "500":
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      security:
+      - Bearer: []
+      summary: 获取视频播放链接
+      tags:
+      - 视频模块
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 提交用户名和密码获取 JWT Token
+      parameters:
+      - description: 登录参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_LoginData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "401":
+          description: 用户名或密码错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      summary: 用户登录
+      tags:
+      - 认证中心
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 提交用户名和密码进行注册
+      parameters:
+      - description: 注册参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 注册成功
+          schema:
+            $ref: '#/definitions/response.Response-handler_RegisterData'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response-any'
+        "409":
+          description: 用户名已存在
+          schema:
+            $ref: '#/definitions/response.Response-any'
+      summary: 用户注册
+      tags:
+      - 认证中心
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

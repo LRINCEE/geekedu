@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package geekedu;
+
+option go_package = "geekedu/common/pb";
+
+service VideoService {
+  rpc InitMultipartUpload(InitMultipartUploadRequest) returns (InitMultipartUploadResponse);
+  rpc CompleteMultipartUpload(CompleteMultipartUploadRequest) returns (CompleteMultipartUploadResponse);
+  rpc GetVideoPlayURL(GetVideoPlayURLRequest) returns (GetVideoPlayURLResponse);
+}
+
+message InitMultipartUploadRequest {
+  int64 course_id = 1;
+  string title = 2;
+  string filename = 3;
+  int32 part_count = 4;
+}
+
+message InitMultipartUploadResponse {
+  string upload_id = 1;
+  string object_key = 2;
+  repeated string upload_urls = 3;
+}
+
+message CompleteMultipartUploadRequest {
+  int64 course_id = 1;
+  string upload_id = 2;
+  string object_key = 3;
+  string title = 4;
+  repeated PartInfo parts = 5;
+}
+
+message PartInfo {
+  int32 part_number = 1;
+  string etag = 2;
+}
+
+message CompleteMultipartUploadResponse {
+  int64 video_id = 1;
+}
+
+message GetVideoPlayURLRequest {
+  int64 video_id = 1;
+  int64 user_id = 2;
+}
+
+message GetVideoPlayURLResponse {
+  string play_url = 1;
+}

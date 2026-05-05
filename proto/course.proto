@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package geekedu;
+
+option go_package = "geekedu/common/pb";
+
+service CourseService {
+  rpc CreateCourse(CreateCourseRequest) returns (CreateCourseResponse);
+  rpc ListCourses(ListCoursesRequest) returns (ListCoursesResponse);
+  rpc GetCourse(GetCourseRequest) returns (GetCourseResponse);
+  rpc GetCoverUploadURL(GetCoverUploadURLRequest) returns (GetCoverUploadURLResponse);
+}
+
+message CreateCourseRequest {
+  string title = 1;
+  string description = 2;
+  double price = 3;
+  string cover_key = 4;
+  int64 teacher_id = 5;
+}
+
+message GetCoverUploadURLRequest {
+  string filename = 1;
+}
+
+message GetCoverUploadURLResponse {
+  string upload_url = 1;
+  string cover_key = 2;
+}
+
+message CreateCourseResponse {
+  int64 course_id = 1;
+}
+
+message ListCoursesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListCoursesResponse {
+  repeated CourseItem courses = 1;
+  int64 total = 2;
+}
+
+message CourseItem {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+  double price = 4;
+  string cover_url = 5;
+  string created_at = 6;
+  int64 teacher_id = 7;
+}
+
+message GetCourseRequest {
+  int64 course_id = 1;
+}
+
+message GetCourseResponse {
+  CourseItem course = 1;
+  repeated VideoItem videos = 2;
+}
+
+message VideoItem {
+  int64 id = 1;
+  string title = 2;
+  int32 sort_order = 3;
+  int64 course_id = 4;
+}

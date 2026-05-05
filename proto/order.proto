@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package geekedu;
+
+option go_package = "geekedu/common/pb";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc CheckPurchase(CheckPurchaseRequest) returns (CheckPurchaseResponse);
+}
+
+message CreateOrderRequest {
+  int64 user_id = 1;
+  int64 course_id = 2;
+}
+
+message CreateOrderResponse {
+  int64 order_id = 1;
+}
+
+message CheckPurchaseRequest {
+  int64 user_id = 1;
+  int64 course_id = 2;
+}
+
+message CheckPurchaseResponse {
+  bool purchased = 1;
+}
