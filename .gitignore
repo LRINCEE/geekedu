@@ -44,3 +44,6 @@ temp/
 data/
 mysql_data/
 redis_data/
+
+*.md
+!README.md
